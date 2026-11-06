@@ -1,0 +1,102 @@
+# Local HRIS stack. Mongo must be a replica set so payroll and leave can use transactions.
+services:
+  mongo:
+    image: mongo:7
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    ports:
+      - "27020:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  mongo-init:
+    image: mongo:7
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: "no"
+    entrypoint: >
+      mongosh --host mongo:27017 --eval
+      'try { rs.status().ok } catch (e) { rs.initiate({_id:"rs0", members:[{_id:0, host:"mongo:27017"}]}) }'
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  mailpit:
+    image: axllent/mailpit
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file: .env
+    environment:
+      MONGO_URI: mongodb://mongo:27017/?replicaSet=rs0
+      REDIS_URL: redis://redis:6379/0
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+    depends_on:
+      mongo-init:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
+    ports:
+      - "8010:8000"
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: celery -A app.worker.celery_app worker --loglevel=info
+    env_file: .env
+    environment:
+      MONGO_URI: mongodb://mongo:27017/?replicaSet=rs0
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - api
+
+  beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: celery -A app.worker.celery_app beat --loglevel=info
+    env_file: .env
+    environment:
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - worker
+
+  flower:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: celery -A app.worker.celery_app flower --port=5555
+    ports:
+      - "5555:5555"
+    environment:
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - worker
+
+  web:
+    image: node:22
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    command: npm run dev -- --host 0.0.0.0 --port 5174
+    ports:
+      - "5174:5174"
+    depends_on:
+      - api
+
+volumes:
+  mongo-data:

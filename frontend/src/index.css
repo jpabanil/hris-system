@@ -1,0 +1,203 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+
+  /* Surface + text tokens (light). Dark values are set on html.dark below. */
+  --color-paper: #eef1f8;
+  --color-ink: #0f172a;
+  --color-muted: #5b6478;
+  --color-accent: #5458e6;
+  --color-line: rgb(15 23 42 / 0.08);
+  --color-card: rgb(255 255 255 / 0.62);
+  --color-soft: rgb(15 23 42 / 0.045);
+  --color-danger: #d92d3a;
+  --color-success: #0f9f6e;
+
+  /* Brand gradient stops stay the same in both themes so white text keeps its contrast. */
+  --color-brand: #5b5ff0;
+  --color-brand-2: #8b5cf6;
+}
+
+:root {
+  --glass-border: rgb(255 255 255 / 0.75);
+  --glass-shadow: 0 1px 0 0 rgb(255 255 255 / 0.6) inset, 0 10px 30px -12px rgb(30 41 82 / 0.18);
+  --glass-blur: 18px;
+  --blob-1: rgb(129 140 248 / 0.45);
+  --blob-2: rgb(236 72 153 / 0.22);
+  --blob-3: rgb(45 212 191 / 0.28);
+  color-scheme: light;
+}
+
+html.dark {
+  --color-paper: #0a0e1a;
+  --color-ink: #e8ebf5;
+  --color-muted: #98a2b8;
+  --color-accent: #a5b4fc;
+  --color-line: rgb(255 255 255 / 0.08);
+  --color-card: rgb(22 27 45 / 0.55);
+  --color-soft: rgb(255 255 255 / 0.06);
+  --color-danger: #fb7185;
+  --color-success: #34d399;
+
+  --glass-border: rgb(255 255 255 / 0.09);
+  --glass-shadow: 0 1px 0 0 rgb(255 255 255 / 0.05) inset, 0 18px 40px -16px rgb(0 0 0 / 0.6);
+  --blob-1: rgb(99 102 241 / 0.42);
+  --blob-2: rgb(168 85 247 / 0.3);
+  --blob-3: rgb(20 184 166 / 0.24);
+  color-scheme: dark;
+}
+
+/* Frosted surface: translucent fill, backdrop blur, hairline highlight border. */
+@utility glass {
+  background-color: var(--color-card);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(170%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(170%);
+}
+
+@utility glass-strong {
+  background-color: color-mix(in srgb, var(--color-paper) 72%, transparent);
+  border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+}
+
+@utility bg-brand-gradient {
+  background-image: linear-gradient(135deg, var(--color-brand), var(--color-brand-2));
+}
+
+@utility text-brand-gradient {
+  background-image: linear-gradient(135deg, var(--color-brand), var(--color-brand-2) 60%, #ec4899);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@layer base {
+  html {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+  }
+
+  body {
+    position: relative;
+    margin: 0;
+    min-height: 100svh;
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* Soft colour field behind the glass so the blur has something to refract. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(42rem 32rem at 8% -6%, var(--blob-1), transparent 70%),
+      radial-gradient(36rem 28rem at 100% 8%, var(--blob-2), transparent 70%),
+      radial-gradient(40rem 30rem at 60% 110%, var(--blob-3), transparent 70%);
+  }
+
+  #root {
+    isolation: isolate;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  dialog {
+    color: var(--color-ink);
+  }
+
+  dialog[open] {
+    animation: dialog-in 0.18s ease-out;
+  }
+
+  dialog::backdrop {
+    background: rgb(10 14 26 / 0.4);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+  }
+
+  ::selection {
+    background: var(--color-brand);
+    color: #fff;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line) transparent;
+  }
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.org-canvas .react-flow__controls {
+  overflow: hidden;
+  border-radius: 0.75rem;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.org-canvas .react-flow__controls-button {
+  background: var(--color-card);
+  border-bottom-color: var(--color-line);
+  fill: var(--color-ink);
+}
+
+.org-canvas .react-flow__attribution {
+  background: transparent;
+  color: var(--color-muted);
+}
+
+.recharts-default-tooltip {
+  border-radius: 0.75rem !important;
+  border: 1px solid var(--glass-border) !important;
+  background: var(--color-card) !important;
+  color: var(--color-ink) !important;
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}

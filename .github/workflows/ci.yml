@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - name: Start MongoDB replica set
+        run: |
+          docker run -d --name hris-mongo -p 27017:27017 mongo:7 --replSet rs0 --bind_ip_all
+          for i in $(seq 1 30); do
+            mongosh --quiet --port 27017 --eval 'db.adminCommand({ping:1})' && break
+            sleep 2
+          done
+          mongosh --port 27017 --eval 'rs.initiate({_id:"rs0", members:[{_id:0, host:"127.0.0.1:27017"}]})'
+          for i in $(seq 1 30); do
+            mongosh --quiet --port 27017 --eval 'quit(db.hello().isWritablePrimary ? 0 : 1)' && break
+            sleep 2
+          done
+      - name: Install
+        working-directory: backend
+        run: uv sync
+      - name: Ruff
+        working-directory: backend
+        run: uv run ruff check app tests seeds
+      - name: Mypy
+        working-directory: backend
+        run: uv run mypy app/domain app/core/money.py
+      - name: Pytest
+        working-directory: backend
+        env:
+          MONGO_URI: mongodb://127.0.0.1:27017/?replicaSet=rs0
+          MONGO_DB: hris_ci
+          REDIS_URL: redis://127.0.0.1:6379/0
+        run: uv run pytest
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install and build
+        working-directory: frontend
+        run: |
+          npm install
+          npx tsc -b --noEmit
+          npm run build
+      - name: Playwright smoke
+        working-directory: frontend
+        run: |
+          npx playwright install --with-deps chromium
+          npm run e2e

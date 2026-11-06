@@ -1,0 +1,27 @@
+{
+  "id": "monthly_regular",
+  "note": "Monthly 30000, one period, SSS MSC 30000, PhilHealth 2.5%, Pag-IBIG cap, TRAIN monthly brackets.",
+  "input": {
+    "employee_id": "e1",
+    "pay_basis": "monthly",
+    "basic_salary": "30000.00",
+    "daily_rate": "1379.31",
+    "hourly_rate": "172.41",
+    "periods_per_year": 12,
+    "period_start": "2026-11-01",
+    "period_end": "2026-11-30",
+    "working_days_in_period": "22",
+    "days_employed_in_period": "22",
+    "days_worked": "22",
+    "hours_worked": "176"
+  },
+  "expect": {
+    "basic_pay": "30000.00",
+    "gross": "30000.00",
+    "taxable_income": "27550.00",
+    "withholding_tax": "1007.50",
+    "total_deductions": "3457.50",
+    "net_pay": "26542.50",
+    "has_deferrals": false
+  }
+}
