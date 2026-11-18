@@ -1,6 +1,14 @@
 # HRIS
 
-Philippine SME human resources system. The API is FastAPI and MongoDB. The web app is Vite and React. The build plan is `plan.md`.
+Philippine SME human resources system. The build plan is `plan.md`.
+
+## Stack
+
+- API: Python 3.12, FastAPI, and Uvicorn. Request and response models are Pydantic v2. Sign-in is a JWT in httpOnly cookies, Argon2 password hashes, and optional TOTP.
+- Data: MongoDB 7 as a single-node replica set, accessed with Beanie and PyMongo. Money is `Decimal` in Python and `Decimal128` in MongoDB. Payroll and leave writes use multi-document transactions.
+- Jobs: Celery, with Redis as the broker and result backend. Celery Beat runs the scheduled jobs.
+- Files and mail: Jinja2 and WeasyPrint render PDFs, pikepdf locks them, openpyxl writes Excel, and aiosmtplib sends mail. Docker Compose includes Mailpit for local SMTP.
+- Web: Vite, React 19, and TypeScript, styled with Tailwind CSS 4. Routing is React Router. Server data uses TanStack Query. Forms use React Hook Form and Zod. Charts use Recharts, the org chart uses React Flow, and copy uses i18next. The web app is a PWA.
 
 ## Run it locally
 
